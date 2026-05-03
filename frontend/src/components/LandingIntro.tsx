@@ -41,7 +41,7 @@ export function LandingIntro({ onCta }: Props) {
         Upload your CSV
       </button>
 
-      <div className="border border-[#EAEAEA] rounded-lg px-6 py-5 text-left max-w-xs mx-auto">
+      <div className="border border-[#EAEAEA] rounded-lg px-6 py-5 text-left max-w-sm mx-auto">
         <p className="text-[10px] font-medium uppercase tracking-widest text-[#B2B0AA] mb-4">
           Example
         </p>
