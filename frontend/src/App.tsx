@@ -143,7 +143,7 @@ export default function App() {
       <main className="max-w-4xl mx-auto px-8">
         {/* Error */}
         {error && (
-          <div className="mt-6 border border-[#FDEBEC] bg-[#FDEBEC] rounded-lg px-4 py-3 text-sm text-[#9F2F2D]">
+          <div className="mt-6 border border-[#F5C5C8] bg-[#FDEBEC] rounded-lg px-4 py-3 text-sm text-[#9F2F2D]">
             {error}
           </div>
         )}
@@ -218,8 +218,7 @@ export default function App() {
                       Shopify output preview
                     </p>
                     <p className="text-xs text-[#787774] mt-0.5">
-                      Exactly what will be imported — first{" "}
-                      {preview.rows.length} rows
+                      Based on first {preview.rows.length} rows
                     </p>
                   </div>
                   <div className="p-6">
@@ -240,8 +239,7 @@ export default function App() {
             <FadeIn delay={isTitleMapped ? 320 : 160}>
               <div className="border border-[#EAEAEA] rounded-lg bg-white p-6 space-y-4">
                 <button
-                  className="w-full py-3.5 text-sm font-medium text-white bg-[#111111] rounded transition-all duration-150 hover:bg-[#333333] active:scale-[0.98] disabled:opacity-25 disabled:cursor-not-allowed"
-                  style={{ willChange: "transform" }}
+                  className="w-full py-3.5 text-sm font-medium text-white bg-[#111111] rounded transition-colors duration-150 hover:bg-[#333333] active:scale-[0.98] disabled:opacity-40 disabled:cursor-not-allowed"
                   disabled={!isTitleMapped || loading}
                   onClick={handleGenerate}
                 >
@@ -271,16 +269,6 @@ export default function App() {
                   </div>
                 )}
 
-                {isTitleMapped && !downloadSuccess && (
-                  <div className="flex items-center justify-center gap-1.5 text-xs text-[#B2B0AA] flex-wrap">
-                    <span>After download:</span>
-                    <span>Shopify</span>
-                    <ArrowRightIcon size={9} />
-                    <span>Products</span>
-                    <ArrowRightIcon size={9} />
-                    <span>Import</span>
-                  </div>
-                )}
               </div>
             </FadeIn>
 

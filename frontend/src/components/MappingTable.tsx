@@ -61,7 +61,7 @@ function FieldRow({ field, columns, mapping, onChange }: FieldRowProps) {
       <td className="py-2.5 pr-4">
         <div className="relative">
           <select
-            className="w-full border border-[#EAEAEA] rounded px-3 py-1.5 pr-7 text-sm text-[#111111] bg-white focus:outline-none focus:border-muted transition-colors cursor-pointer"
+            className="w-full border border-[#EAEAEA] rounded px-3 py-1.5 pr-7 text-sm text-[#111111] bg-white focus:outline-none focus:border-[#787774] focus-visible:ring-1 focus-visible:ring-[#111111] transition-colors cursor-pointer"
             value={mapping[field] ?? ""}
             onChange={(e) => onChange(field, e.target.value)}
           >

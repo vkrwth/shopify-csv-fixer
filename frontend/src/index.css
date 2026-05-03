@@ -32,4 +32,24 @@
     -webkit-appearance: none;
     appearance: none;
   }
+
+  /* Keyboard focus ring — suppressed on mouse click, visible on keyboard nav */
+  :focus-visible {
+    outline: 2px solid #111111;
+    outline-offset: 2px;
+    border-radius: 3px;
+  }
+
+  :focus:not(:focus-visible) {
+    outline: none;
+  }
+
+  /* Honour reduced-motion OS preference */
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+    }
+  }
 }

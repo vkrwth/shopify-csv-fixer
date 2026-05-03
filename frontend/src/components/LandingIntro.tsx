@@ -36,8 +36,7 @@ export function LandingIntro({ onCta }: Props) {
 
       <button
         onClick={onCta}
-        className="inline-block px-6 py-3 text-sm font-medium text-white bg-[#111111] rounded transition-all duration-150 hover:bg-[#333333] active:scale-[0.98] mb-12"
-        style={{ willChange: "transform" }}
+        className="px-6 py-3 text-sm font-medium text-white bg-[#111111] rounded transition-colors duration-150 hover:bg-[#333333] active:scale-[0.98] mb-12"
       >
         Upload your CSV
       </button>
@@ -46,21 +45,21 @@ export function LandingIntro({ onCta }: Props) {
         <p className="text-[10px] font-medium uppercase tracking-widest text-[#B2B0AA] mb-4">
           Example
         </p>
-        <div className="flex items-start gap-4">
-          <div className="space-y-1">
+        <div className="flex items-center gap-5">
+          <div>
             <p className="text-[10px] uppercase tracking-widest text-[#B2B0AA] mb-2">
               Before
             </p>
             <p className="text-sm text-[#787774]">Blue T-Shirt (S)</p>
             <p className="text-sm text-[#787774]">Blue T-Shirt (M)</p>
           </div>
-          <ArrowRightIcon size={12} className="text-[#B2B0AA] mt-7 shrink-0" />
+          <ArrowRightIcon size={12} className="text-[#B2B0AA] shrink-0" />
           <div>
             <p className="text-[10px] uppercase tracking-widest text-[#B2B0AA] mb-2">
               After
             </p>
             <p className="text-sm text-[#111111] font-medium">
-              1 product with variants (S, M)
+              1 product, 2 variants
             </p>
           </div>
         </div>

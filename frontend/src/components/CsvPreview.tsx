@@ -23,8 +23,7 @@ export function CsvPreview({ columns, rows }: Props) {
           {rows.map((row, i) => (
             <tr
               key={i}
-              className="border-b border-[#EAEAEA] last:border-0"
-              style={{ transition: "background 150ms" }}
+              className="border-b border-[#EAEAEA] last:border-0 hover:bg-[#FBFBFA] transition-colors duration-150"
             >
               {columns.map((col) => (
                 <td
