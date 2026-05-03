@@ -1,10 +1,6 @@
 import { ArrowRightIcon, CheckIcon } from "./icons";
 
-interface Props {
-  onCta: () => void;
-}
-
-export function LandingIntro({ onCta }: Props) {
+export function LandingIntro() {
   return (
     <div className="text-center max-w-2xl mx-auto">
       <h1
@@ -33,13 +29,6 @@ export function LandingIntro({ onCta }: Props) {
           </li>
         ))}
       </ul>
-
-      <button
-        onClick={onCta}
-        className="px-6 py-3 text-sm font-medium text-white bg-[#111111] rounded transition-colors duration-150 hover:bg-[#333333] active:scale-[0.98] mb-12"
-      >
-        Upload your CSV
-      </button>
 
       <div className="border border-[#EAEAEA] rounded-lg px-6 py-5 text-left max-w-sm mx-auto">
         <p className="text-[10px] font-medium uppercase tracking-widest text-[#B2B0AA] mb-4">

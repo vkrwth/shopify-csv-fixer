@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { previewCsv, transformCsv } from "./api/client";
 import { FadeIn } from "./components/FadeIn";
 import { LandingIntro } from "./components/LandingIntro";
@@ -113,12 +113,6 @@ export default function App() {
     });
   }, [previewMeta.hasDuplicateTitles]);
 
-  const uploadRef = useRef<HTMLDivElement>(null);
-
-  const scrollToUpload = () => {
-    uploadRef.current?.scrollIntoView({ behavior: "smooth", block: "center" });
-  };
-
   const isTitleMapped = !!mapping["Title"];
 
   return (
@@ -158,10 +152,10 @@ export default function App() {
             }}
           >
             <FadeIn>
-              <LandingIntro onCta={scrollToUpload} />
+              <LandingIntro />
             </FadeIn>
             <FadeIn delay={120}>
-              <div ref={uploadRef} className="max-w-md mx-auto mt-12">
+              <div className="max-w-md mx-auto mt-12">
                 <CsvUpload onUpload={handleUpload} loading={loading} />
               </div>
             </FadeIn>

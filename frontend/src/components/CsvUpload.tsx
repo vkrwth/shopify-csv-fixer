@@ -23,10 +23,10 @@ export function CsvUpload({ onUpload, loading }: Props) {
       role="button"
       tabIndex={0}
       aria-label="Upload CSV file"
-      className={`border rounded-lg p-14 text-center cursor-pointer select-none transition-all duration-200 ${
+      className={`border-2 rounded-lg p-12 text-center cursor-pointer select-none transition-all duration-150 ${
         dragging
           ? "border-[#111111] bg-[#F5F5F4]"
-          : "border-dashed border-[#EAEAEA] hover:border-[#B2B0AA] hover:bg-[#F9F9F8]"
+          : "border-dashed border-[#B2B0AA] bg-white hover:border-[#111111] hover:bg-[#F9F9F8]"
       }`}
       onDragOver={(e) => {
         e.preventDefault();
@@ -56,18 +56,18 @@ export function CsvUpload({ onUpload, loading }: Props) {
       />
 
       {loading ? (
-        <div className="space-y-2">
+        <div className="space-y-3">
           <div className="w-6 h-6 border border-[#EAEAEA] border-t-[#787774] rounded-full animate-spin mx-auto" />
           <p className="text-sm text-[#787774]">Reading file…</p>
         </div>
       ) : (
         <div className="space-y-3">
-          <UploadIcon size={28} className="mx-auto text-[#B2B0AA]" />
+          <UploadIcon size={36} className="mx-auto text-[#787774]" />
           <div>
-            <p className="text-sm font-medium text-[#111111]">
-              Drop your supplier CSV here
+            <p className="text-base font-medium text-[#111111]">
+              Drop your CSV here
             </p>
-            <p className="text-xs text-[#787774] mt-1">or click to browse</p>
+            <p className="text-sm text-[#787774] mt-1">or click to browse</p>
           </div>
         </div>
       )}
