@@ -1,0 +1,6 @@
+Handle,Title,Body (HTML),Vendor,Type,Tags,Published,Option1 Name,Option1 Value,Option2 Name,Option2 Value,Variant SKU,Variant Price,Variant Inventory Qty,Image Src
+blue-t-shirt,Blue T-Shirt,,,,,TRUE,Title,Default Title,,,TSH-001,19.99,500,https://example.com/blue-tshirt.jpg
+red-t-shirt,Red T-Shirt,,,,,TRUE,Title,Default Title,,,TSH-002,24.99,3,https://example.com/red-tshirt.jpg
+denim-jeans,Denim Jeans,,,,,TRUE,Title,Default Title,,,JNS-001,49.95,12,https://example.com/jeans.jpg
+black-hoodie,Black Hoodie,,,,,TRUE,Title,Default Title,,,HOD-001,39.99,0,https://example.com/hoodie.jpg
+white-sneakers,White Sneakers,,,,,TRUE,Title,Default Title,,,SNK-001,89.00,0,https://example.com/sneakers.jpg

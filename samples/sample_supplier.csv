@@ -1,0 +1,6 @@
+ProductName,SKU,Description,Brand,Category,Tags,Price,Stock,ImageURL
+Blue T-Shirt,TSH-001,"<p>A comfortable blue t-shirt</p>",AcmeBrand,Apparel,cotton,"19,99",500,https://example.com/blue-tshirt.jpg
+Red T-Shirt,TSH-002,"<p>A vibrant red t-shirt</p>",AcmeBrand,Apparel,cotton,24.99,3,https://example.com/red-tshirt.jpg
+Denim Jeans,JNS-001,"<p>Classic denim jeans</p>",DenimCo,Clothing,denim,"€49,95",12,https://example.com/jeans.jpg
+Black Hoodie,HOD-001,"<p>Warm black hoodie</p>",AcmeBrand,Apparel,hoodie,€39.99,0,https://example.com/hoodie.jpg
+White Sneakers,SNK-001,"<p>Clean white sneakers</p>",StepUp,Footwear,shoes,€89.00,,https://example.com/sneakers.jpg

@@ -1,0 +1,3 @@
+PRODUCTNAME,sku,Price,DESCRIPTION,Brand,CATEGORY,tags,STOCK,imageurl
+Blue T-Shirt,TSH-001,19.99,A comfortable tee,BrandA,Apparel,cotton,100,https://example.com/img1.jpg
+Red Hoodie,HOD-001,39.99,Warm hoodie,BrandB,Apparel,winter,50,https://example.com/img2.jpg

@@ -1,0 +1,13 @@
+ProductName,SKU,Price,Stock
+Integer stock,SKU-001,9.99,500
+Decimal stock,SKU-002,9.99,12.5
+Comma thousands,SKU-003,9.99,"1,000"
+Large comma thousands,SKU-004,9.99,"10,000"
+Out of stock text,SKU-005,9.99,Out of stock
+In stock text,SKU-006,9.99,In stock
+Zero stock,SKU-007,9.99,0
+Negative stock,SKU-008,9.99,-3
+Empty stock,SKU-009,9.99,
+Whitespace stock,SKU-010,9.99,
+Float round,SKU-011,9.99,99.9
+N/A stock,SKU-012,9.99,N/A

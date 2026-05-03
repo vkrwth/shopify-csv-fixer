@@ -1,0 +1,8 @@
+ProductName,SKU,Price,Description,Brand,Category,Tags,Stock,ImageURL
+Full row,SKU-001,19.99,A full product,BrandA,Apparel,cotton,100,https://example.com/img1.jpg
+No price,SKU-002,,A product with no price,BrandB,Apparel,cotton,50,https://example.com/img2.jpg
+No SKU,,29.99,Product missing SKU,BrandC,Apparel,,25,
+No brand,SKU-004,9.99,Product missing brand,,Electronics,gadget,200,
+Empty row,,,,,,,,
+Title only product,,,,,,,,
+All empty except title,SKU-007,,,,,,,

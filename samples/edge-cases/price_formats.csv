@@ -1,0 +1,19 @@
+ProductName,SKU,Price
+Dot decimal,SKU-001,19.99
+Comma decimal,SKU-002,"19,99"
+Euro comma decimal,SKU-003,"€49,95"
+Euro dot decimal,SKU-004,€39.99
+Euro with space,SKU-005,"€ 89.00"
+Dollar sign,SKU-006,$24.99
+Pound sign,SKU-007,£14.99
+European thousands,SKU-008,"1.999,99"
+Large European thousands,SKU-009,"10.500,00"
+US thousands comma,SKU-010,"1,999.99"
+Free product,SKU-011,FREE
+Not available,SKU-012,N/A
+Empty price,SKU-013,
+Whitespace only,SKU-014,
+Negative price,SKU-015,-5.00
+Zero price,SKU-016,0.00
+Whole number,SKU-017,25
+Euro no decimal,SKU-018,€30

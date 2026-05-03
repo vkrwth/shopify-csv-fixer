@@ -1,0 +1,5 @@
+ProductName,SKU,Price,Description,Tags
+Short,SKU-001,9.99,Short desc,tag1
+A Very Long Product Name That Goes On And On And Might Cause Truncation Issues In Some Systems But Should Still Be Handled Correctly,SKU-002,19.99,"This is an extremely long description that contains many words and sentences. It might include HTML-like content or special formatting. The goal is to test that the system doesn't truncate, corrupt, or otherwise mangle long text values during the CSV transformation process. Products with long descriptions are common in e-commerce, especially for technical or detailed items that require extensive specification documentation.",tag1 tag2 tag3 tag4 tag5 tag6 tag7 tag8 tag9 tag10
+Normal Product,SKU-003,14.99,Normal description,tag1 tag2
+X,SKU-004,0.01,X,x
