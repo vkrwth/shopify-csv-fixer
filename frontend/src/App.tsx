@@ -1,6 +1,7 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { previewCsv, transformCsv } from "./api/client";
 import { FadeIn } from "./components/FadeIn";
+import { LandingIntro } from "./components/LandingIntro";
 import { CsvPreview } from "./components/CsvPreview";
 import { CsvUpload } from "./components/CsvUpload";
 import { MappingTable } from "./components/MappingTable";
@@ -112,6 +113,12 @@ export default function App() {
     });
   }, [previewMeta.hasDuplicateTitles]);
 
+  const uploadRef = useRef<HTMLDivElement>(null);
+
+  const scrollToUpload = () => {
+    uploadRef.current?.scrollIntoView({ behavior: "smooth", block: "center" });
+  };
+
   const isTitleMapped = !!mapping["Title"];
 
   return (
@@ -144,26 +151,17 @@ export default function App() {
         {/* Upload step */}
         {step === "upload" && (
           <section
-            className="py-28 text-center"
+            className="py-20 text-center"
             style={{
               background:
                 "radial-gradient(ellipse 70% 40% at 50% 0%, rgba(0,0,0,0.018) 0%, transparent 100%)",
             }}
           >
             <FadeIn>
-              <h1
-                className="font-serif text-[2.75rem] leading-[1.08] text-[#111111] mb-5"
-                style={{ letterSpacing: "-0.02em" }}
-              >
-                Fix your
-                <br />
-                Shopify import
-              </h1>
-              <p className="text-[0.9375rem] text-[#787774] leading-relaxed mb-14 max-w-xs mx-auto">
-                Upload any supplier CSV and get a clean,
-                Shopify-ready file in seconds.
-              </p>
-              <div className="max-w-md mx-auto">
+              <LandingIntro onCta={scrollToUpload} />
+            </FadeIn>
+            <FadeIn delay={120}>
+              <div ref={uploadRef} className="max-w-md mx-auto mt-12">
                 <CsvUpload onUpload={handleUpload} loading={loading} />
               </div>
             </FadeIn>
