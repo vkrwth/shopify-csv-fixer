@@ -65,7 +65,7 @@ export function CsvUpload({ onUpload, loading }: Props) {
           <UploadIcon size={36} className="mx-auto text-[#787774]" />
           <div>
             <p className="text-base font-medium text-[#111111]">
-              Drop your CSV here
+              Upload your broken Shopify file
             </p>
             <p className="text-sm text-[#787774] mt-1">or click to browse</p>
           </div>
