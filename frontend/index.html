@@ -3,14 +3,98 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Shopify Import Fixer</title>
-    <meta name="description" content="Upload any supplier CSV and get a Shopify-ready file in seconds. Automatic column mapping, variant detection, European price format fixes." />
+    <title>Shopify CSV Doctor | Fix Broken Product Imports &amp; Variant Errors</title>
+    <meta name="description" content="Stop wasting hours in Excel. Upload your broken Shopify CSV to diagnose 'Handle' mismatches and formatting errors in seconds. Works for WooCommerce &amp; Etsy migrations." />
+    <meta name="robots" content="index, follow" />
+
+    <!-- Open Graph -->
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="Shopify CSV Doctor | Fix Broken Product Imports &amp; Variant Errors" />
+    <meta property="og:description" content="Diagnose and fix Shopify import errors instantly. Handle mismatches, Default Title conflicts, encoding errors — all repaired automatically." />
+
+    <!-- Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
       href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;1,9..40,300&family=Instrument+Serif:ital@0;1&family=JetBrains+Mono:wght@400;500&display=swap"
       rel="stylesheet"
     />
+
+    <!-- JSON-LD: SoftwareApplication -->
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "SoftwareApplication",
+      "name": "Shopify CSV Doctor",
+      "applicationCategory": "BusinessApplication",
+      "operatingSystem": "Any",
+      "offers": {
+        "@type": "Offer",
+        "price": "0",
+        "priceCurrency": "USD"
+      },
+      "description": "Diagnose and automatically repair broken Shopify product CSV files. Fixes Handle mismatches, Default Title conflicts, encoding errors, and WooCommerce/Etsy migration issues.",
+      "featureList": [
+        "Handle consistency validation",
+        "Smart quote and encoding repair",
+        "Default Title placeholder removal",
+        "WooCommerce parent-child row relinking",
+        "Etsy flat-list handle generation",
+        "Variant limit enforcement",
+        "Large file partitioning"
+      ]
+    }
+    </script>
+
+    <!-- JSON-LD: FAQPage -->
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "FAQPage",
+      "mainEntity": [
+        {
+          "@type": "Question",
+          "name": "How do I fix the Shopify 'Handle already exists' error?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "The 'Handle already exists' error means multiple rows in your CSV share a title but have different Handle values. Shopify requires all variant rows of the same product to share exactly one Handle. Upload your CSV to Shopify CSV Doctor — it detects every Handle mismatch and rewrites them automatically."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "How to migrate WooCommerce variants to Shopify without errors?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "WooCommerce exports use a parent/child row structure (post_type: variable / variation) that Shopify does not understand. Shopify expects all variant rows to share a Handle and use Option1 Name/Value columns. Shopify CSV Doctor detects the WooCommerce format automatically and re-links all child rows to their parent Handle during repair."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "What causes 'Illegal quoting on line N' in Shopify CSV imports?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "This error is caused by curly/smart quotes (“”) in your CSV, usually introduced by Microsoft Excel or Google Sheets when saving. Shopify's CSV parser treats these as syntax errors. Shopify CSV Doctor scans the entire file for smart quotes before import and replaces them with standard straight quotes."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "How do I fix 'Validation failed: Variant already exists' in Shopify?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "This error occurs when a product has a row with Option1 Value: Default Title alongside real variant rows. The Default Title placeholder conflicts with the real variant data. Shopify CSV Doctor identifies and removes these placeholder rows automatically."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "Why does Shopify ignore lines during CSV import?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Shopify silently skips rows when it encounters a Handle that it has already processed differently (e.g., as a standalone product). This usually means your Handle values are inconsistent across variant rows. Use Shopify CSV Doctor to sync all Handle values within each product group before importing."
+          }
+        }
+      ]
+    }
+    </script>
   </head>
   <body>
     <div id="root"></div>

@@ -57,9 +57,28 @@ NON_STANDARD_SUGGESTIONS: dict[str, str] = {
     "url_key": "Handle",
 }
 
-SMART_QUOTE_RE = re.compile(r"[“”‘’«»]")
-EMOJI_RE = re.compile(r"[\U00010000-\U0010FFFF]", flags=re.UNICODE)
-CONTROL_CHAR_RE = re.compile(r"[\x00-\x08\x0b\x0c\x0e-\x1f\x7f]")
+SMART_QUOTE_RE = re.compile(r”[“”’’«»]”)
+EMOJI_RE = re.compile(r”[\U00010000-\U0010FFFF]”, flags=re.UNICODE)
+CONTROL_CHAR_RE = re.compile(r”[\x00-\x08\x0b\x0c\x0e-\x1f\x7f]”)
+
+COLOR_TOKENS: dict[str, str] = {
+    “RED”: “Red”, “BLUE”: “Blue”, “GREEN”: “Green”, “BLACK”: “Black”,
+    “WHITE”: “White”, “YELLOW”: “Yellow”, “PINK”: “Pink”, “PURPLE”: “Purple”,
+    “ORANGE”: “Orange”, “BROWN”: “Brown”, “GREY”: “Grey”, “GRAY”: “Gray”,
+    “NAVY”: “Navy”, “BEIGE”: “Beige”, “TAN”: “Tan”, “TEAL”: “Teal”,
+    “MAROON”: “Maroon”, “OLIVE”: “Olive”, “CORAL”: “Coral”, “CREAM”: “Cream”,
+    “SILVER”: “Silver”, “GOLD”: “Gold”,
+}
+SIZE_SET = {“XS”, “S”, “M”, “L”, “XL”, “XXL”, “2XL”, “3XL”, “4XL”, “36”, “38”, “40”, “42”, “44”, “46”}
+
+
+def _extract_color_size_from_sku(sku: str) -> tuple[str | None, str | None]:
+    if not sku:
+        return None, None
+    parts = [p.upper() for p in re.split(r”[-_/ ]”, sku.strip()) if p]
+    color = next((COLOR_TOKENS[p] for p in parts if p in COLOR_TOKENS), None)
+    size = next((p for p in parts if p in SIZE_SET), None)
+    return color, size
 
 
 def validate_csv(file_bytes: bytes) -> dict:
@@ -228,6 +247,40 @@ def validate_csv(file_bytes: bytes) -> dict:
             "code": "WARN_WOOCOMMERCE_FORMAT",
             "rows": "global",
             "msg": "WooCommerce export detected. Parent/variation rows will be re-linked using Handle inheritance.",
+        })
+
+    # SKU color/size intelligence
+    if (
+        "Variant SKU" in headers
+        and "Option1 Name" not in headers
+        and has_title
+    ):
+        sku_col = "Variant SKU"
+        examples: list[dict] = []
+        for _, row in df.head(20).iterrows():
+            sku = row.get(sku_col, "")
+            color, size = _extract_color_size_from_sku(sku)
+            if color or size:
+                examples.append({"sku": sku, "color": color, "size": size})
+        if examples:
+            issues.append({
+                "code": "INFO_SKU_COLOR_INTELLIGENCE",
+                "rows": "global",
+                "msg": (
+                    f"SKU codes appear to encode color and/or size (e.g. '{examples[0]['sku']}'). "
+                    f"Shopify CSV Doctor can auto-generate Option1/Option2 columns from these SKUs."
+                ),
+                "data": {"examples": examples[:5]},
+            })
+
+    # File size / large file warning
+    file_size_bytes = len(file_bytes)
+    if file_size_bytes > 15_000_000:
+        issues.append({
+            "code": "WARN_LARGE_FILE",
+            "rows": "global",
+            "msg": f"File is {file_size_bytes / 1_000_000:.1f} MB. Shopify recommends files under 15 MB. Enable 'Split large file' in repairs to receive a .zip with multiple parts.",
+            "data": {"bytes": file_size_bytes},
         })
 
     product_count = (

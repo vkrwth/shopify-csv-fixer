@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
+import { Routes, Route } from "react-router-dom";
 import { previewCsv, transformCsv, validateCsv } from "./api/client";
 import { FadeIn } from "./components/FadeIn";
 import { LandingIntro } from "./components/LandingIntro";
@@ -8,6 +9,8 @@ import { MappingTable } from "./components/MappingTable";
 import { OutputPreview } from "./components/OutputPreview";
 import { TransformationSummary } from "./components/TransformationSummary";
 import { PreFlightReport } from "./components/PreFlightReport";
+import { PanicParser } from "./components/PanicParser";
+import { ErrorFixPage } from "./pages/ErrorFixPage";
 import { ArrowRightIcon } from "./components/icons";
 import {
   applyDiagnosticSuggestions,
@@ -23,6 +26,7 @@ import type {
   RepairOptions,
   ShopifyField,
 } from "./types";
+import type { ParsedError } from "./components/PanicParser";
 
 type Step = "upload" | "preflight" | "mapping";
 
@@ -34,7 +38,7 @@ const EMPTY_META = {
   variantRowsCount: 0,
 };
 
-export default function App() {
+function MainApp() {
   const [step, setStep] = useState<Step>("upload");
   const [uploadedFile, setUploadedFile] = useState<File | null>(null);
   const [preview, setPreview] = useState<PreviewResponse | null>(null);
@@ -50,6 +54,7 @@ export default function App() {
   const [error, setError] = useState<string | null>(null);
   const [downloadSuccess, setDownloadSuccess] = useState(false);
   const [downloadFilename, setDownloadFilename] = useState("shopify_ready.csv");
+  const [panicError, setPanicError] = useState<ParsedError | null>(null);
 
   const { rows: outputRows, meta: previewMeta } = useMemo(
     () =>
@@ -72,12 +77,12 @@ export default function App() {
       setPreview(previewData);
       setDiagnostic(diagnosticData);
 
-      // Build mapping: auto-map + apply diagnostic suggestions
       const base = buildAutoMapping(previewData.columns);
       const enriched = applyDiagnosticSuggestions(base, diagnosticData.nonStandardHeaders);
       setMapping(enriched);
       setRepairOptions(buildRepairDefaults(diagnosticData));
       setDownloadSuccess(false);
+      setPanicError(null);
       setStep("preflight");
       track("upload_parsed", {
         number_of_columns: previewData.columns.length,
@@ -153,6 +158,7 @@ export default function App() {
     setMapping({});
     setError(null);
     setDownloadSuccess(false);
+    setPanicError(null);
   };
 
   useEffect(() => {
@@ -168,13 +174,16 @@ export default function App() {
 
   const isTitleMapped = !!mapping["Title"];
 
+  // Row to highlight from panic parser
+  const highlightRow = panicError?.row ?? null;
+
   return (
     <div className="min-h-screen bg-[#FBFBFA] font-sans">
       {/* Header */}
       <header className="sticky top-0 z-10 bg-white/90 backdrop-blur-sm border-b border-[#EAEAEA]">
         <div className="max-w-4xl mx-auto px-8 h-12 flex items-center justify-between">
           <span className="font-mono text-[11px] text-[#787774] uppercase tracking-widest">
-            Shopify Import Fixer
+            Shopify CSV Doctor
           </span>
           {step !== "upload" && (
             <div className="flex items-center gap-4">
@@ -183,7 +192,7 @@ export default function App() {
                   className="text-xs text-[#B2B0AA] hover:text-[#787774] transition-colors"
                   onClick={() => setStep("preflight")}
                 >
-                  ← Back to diagnostic
+                  ← Diagnostic
                 </button>
               )}
               <button
@@ -235,7 +244,7 @@ export default function App() {
                     {uploadedFile?.name ?? "Source file"}
                   </h2>
                   <p className="text-xs text-[#787774] mt-0.5">
-                    {diagnostic.summary.totalRows} rows scanned
+                    {diagnostic.summary.totalRows} rows · Health report ready
                   </p>
                 </div>
                 <button
@@ -246,6 +255,7 @@ export default function App() {
                 </button>
               </div>
             </FadeIn>
+
             <FadeIn delay={60}>
               <PreFlightReport
                 report={diagnostic}
@@ -254,6 +264,12 @@ export default function App() {
                 onContinue={() => setStep("mapping")}
               />
             </FadeIn>
+
+            {/* Panic Parser */}
+            <FadeIn delay={120}>
+              <PanicParser onParsed={setPanicError} parsedError={panicError} />
+            </FadeIn>
+
             <div className="h-16" />
           </div>
         )}
@@ -266,19 +282,29 @@ export default function App() {
               <FadeIn>
                 <div className="flex items-center gap-3 px-4 py-2.5 border border-[#EAEAEA] rounded-lg bg-white">
                   {diagnostic.summary.errorsCount > 0 ? (
-                    <>
-                      <span className="text-xs font-medium text-[#9F2F2D] bg-[#FDEBEC] px-2 py-0.5 rounded">
-                        {diagnostic.summary.errorsCount} {diagnostic.summary.errorsCount === 1 ? "error" : "errors"} queued for repair
-                      </span>
-                    </>
+                    <span className="text-xs font-medium text-[#9F2F2D] bg-[#FDEBEC] px-2 py-0.5 rounded">
+                      {diagnostic.summary.errorsCount} {diagnostic.summary.errorsCount === 1 ? "error" : "errors"} queued for repair
+                    </span>
                   ) : (
                     <span className="text-xs font-medium text-[#956400] bg-[#FBF3DB] px-2 py-0.5 rounded">
                       {diagnostic.summary.warningsCount} {diagnostic.summary.warningsCount === 1 ? "warning" : "warnings"} detected
                     </span>
                   )}
                   <span className="text-xs text-[#787774]">
-                    Repairs will apply automatically when you download.
+                    Repairs apply automatically on download.
                   </span>
+                </div>
+              </FadeIn>
+            )}
+
+            {/* Panic parser result — row highlight hint */}
+            {panicError?.row && (
+              <FadeIn>
+                <div className="flex items-center gap-2.5 px-4 py-2.5 border border-[#e8d98a] rounded-lg bg-[#FBF3DB]">
+                  <span className="text-xs text-[#956400]">
+                    Row {panicError.row} flagged by Shopify —
+                  </span>
+                  <span className="text-xs font-medium text-[#956400]">{panicError.label}</span>
                 </div>
               </FadeIn>
             )}
@@ -293,6 +319,9 @@ export default function App() {
                     </p>
                     <p className="text-xs text-[#787774] mt-0.5">
                       {preview.rows.length} rows previewed
+                      {highlightRow && (
+                        <span className="ml-2 text-[#956400]">· Row {highlightRow} flagged</span>
+                      )}
                     </p>
                   </div>
                   <button
@@ -303,7 +332,11 @@ export default function App() {
                   </button>
                 </div>
                 <div className="p-6">
-                  <CsvPreview columns={preview.columns} rows={preview.rows} />
+                  <CsvPreview
+                    columns={preview.columns}
+                    rows={preview.rows}
+                    highlightRow={highlightRow}
+                  />
                 </div>
               </div>
             </FadeIn>
@@ -393,6 +426,55 @@ export default function App() {
           </div>
         )}
       </main>
+
+      {/* Footer — trust signals */}
+      {step === "upload" && (
+        <footer className="border-t border-[#EAEAEA] mt-4">
+          <div className="max-w-4xl mx-auto px-8 py-5 flex flex-col sm:flex-row items-center justify-between gap-3">
+            <p className="text-xs text-[#B2B0AA]">
+              Compatible with WooCommerce, Etsy, Magento, and BigCommerce exports.
+            </p>
+            <nav className="flex items-center gap-5 text-xs text-[#B2B0AA]">
+              <a href="/fix/ignored-line-handle-exists" className="hover:text-[#787774] transition-colors">
+                Fix: Handle exists
+              </a>
+              <a href="/fix/validation-failed-variant-exists" className="hover:text-[#787774] transition-colors">
+                Fix: Variant error
+              </a>
+              <a href="/fix/illegal-quoting-on-line" className="hover:text-[#787774] transition-colors">
+                Fix: Illegal quoting
+              </a>
+            </nav>
+          </div>
+        </footer>
+      )}
     </div>
+  );
+}
+
+function LandingUploadBridge({ onUpload }: { onUpload: (f: File) => void }) {
+  const [loading, setLoading] = useState(false);
+  const handleUpload = (file: File) => {
+    setLoading(true);
+    onUpload(file);
+    setTimeout(() => setLoading(false), 2000);
+  };
+  return <ErrorFixPage onUpload={handleUpload} loading={loading} />;
+}
+
+export default function App() {
+  const handleLandingUpload = (file: File) => {
+    sessionStorage.setItem("pendingFile", file.name);
+    window.location.href = "/";
+  };
+
+  return (
+    <Routes>
+      <Route path="/" element={<MainApp />} />
+      <Route
+        path="/fix/:errorCode"
+        element={<LandingUploadBridge onUpload={handleLandingUpload} />}
+      />
+    </Routes>
   );
 }
