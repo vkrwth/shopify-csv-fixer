@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { previewCsv, transformCsv } from "./api/client";
+import { previewCsv, transformCsv, validateCsv } from "./api/client";
 import { FadeIn } from "./components/FadeIn";
 import { LandingIntro } from "./components/LandingIntro";
 import { CsvPreview } from "./components/CsvPreview";
@@ -7,28 +7,55 @@ import { CsvUpload } from "./components/CsvUpload";
 import { MappingTable } from "./components/MappingTable";
 import { OutputPreview } from "./components/OutputPreview";
 import { TransformationSummary } from "./components/TransformationSummary";
+import { PreFlightReport } from "./components/PreFlightReport";
 import { ArrowRightIcon } from "./components/icons";
-import { buildAutoMapping } from "./types";
+import {
+  applyDiagnosticSuggestions,
+  buildAutoMapping,
+  buildRepairDefaults,
+} from "./types";
 import { buildOutputPreview } from "./utils/preview";
 import { track } from "./lib/posthog";
-import type { Mapping, PreviewResponse, ShopifyField } from "./types";
+import type {
+  DiagnosticReport,
+  Mapping,
+  PreviewResponse,
+  RepairOptions,
+  ShopifyField,
+} from "./types";
 
-type Step = "upload" | "mapping";
+type Step = "upload" | "preflight" | "mapping";
+
+const EMPTY_META = {
+  hasDuplicateTitles: false,
+  variantsWithSizeDetected: false,
+  variantsWithoutSize: false,
+  variantGroupsCount: 0,
+  variantRowsCount: 0,
+};
 
 export default function App() {
   const [step, setStep] = useState<Step>("upload");
   const [uploadedFile, setUploadedFile] = useState<File | null>(null);
   const [preview, setPreview] = useState<PreviewResponse | null>(null);
+  const [diagnostic, setDiagnostic] = useState<DiagnosticReport | null>(null);
   const [mapping, setMapping] = useState<Mapping>({});
+  const [repairOptions, setRepairOptions] = useState<RepairOptions>({
+    sanitizeEncoding: false,
+    syncHandles: false,
+    scrubPlaceholders: false,
+    partitionFile: false,
+  });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [downloadSuccess, setDownloadSuccess] = useState(false);
+  const [downloadFilename, setDownloadFilename] = useState("shopify_ready.csv");
 
   const { rows: outputRows, meta: previewMeta } = useMemo(
     () =>
       preview
         ? buildOutputPreview(preview.columns, preview.rows, mapping)
-        : { rows: [], meta: { hasDuplicateTitles: false, variantsWithSizeDetected: false, variantsWithoutSize: false, variantGroupsCount: 0, variantRowsCount: 0 } },
+        : { rows: [], meta: EMPTY_META },
     [preview, mapping]
   );
 
@@ -37,13 +64,27 @@ export default function App() {
     setError(null);
     track("upload_started");
     try {
-      const data = await previewCsv(file);
+      const [previewData, diagnosticData] = await Promise.all([
+        previewCsv(file),
+        validateCsv(file),
+      ]);
       setUploadedFile(file);
-      setPreview(data);
-      setMapping(buildAutoMapping(data.columns));
+      setPreview(previewData);
+      setDiagnostic(diagnosticData);
+
+      // Build mapping: auto-map + apply diagnostic suggestions
+      const base = buildAutoMapping(previewData.columns);
+      const enriched = applyDiagnosticSuggestions(base, diagnosticData.nonStandardHeaders);
+      setMapping(enriched);
+      setRepairOptions(buildRepairDefaults(diagnosticData));
       setDownloadSuccess(false);
-      setStep("mapping");
-      track("upload_parsed", { number_of_columns: data.columns.length, preview_rows: data.rows.length });
+      setStep("preflight");
+      track("upload_parsed", {
+        number_of_columns: previewData.columns.length,
+        preview_rows: previewData.rows.length,
+        errors_found: diagnosticData.summary.errorsCount,
+        warnings_found: diagnosticData.summary.warningsCount,
+      });
     } catch {
       setError("Could not parse this file. Make sure it is a valid CSV and try again.");
     } finally {
@@ -56,7 +97,13 @@ export default function App() {
   };
 
   const handleAutoMap = () => {
-    if (preview) setMapping(buildAutoMapping(preview.columns));
+    if (preview) {
+      const base = buildAutoMapping(preview.columns);
+      const enriched = diagnostic
+        ? applyDiagnosticSuggestions(base, diagnostic.nonStandardHeaders)
+        : base;
+      setMapping(enriched);
+    }
   };
 
   const handleResetMapping = () => setMapping({});
@@ -72,19 +119,24 @@ export default function App() {
       has_title_mapping: !!mapping["Title"],
       has_sku_mapping: !!mapping["Variant SKU"],
       has_price_mapping: !!mapping["Variant Price"],
+      repairs_enabled: Object.entries(repairOptions)
+        .filter(([, v]) => v)
+        .map(([k]) => k),
     });
     try {
-      const blob = await transformCsv(uploadedFile, mapping);
+      const { blob, filename } = await transformCsv(uploadedFile, mapping, repairOptions);
       const url = URL.createObjectURL(blob);
       const a = document.createElement("a");
       a.href = url;
-      a.download = "shopify_ready.csv";
+      a.download = filename;
       a.click();
       URL.revokeObjectURL(url);
+      setDownloadFilename(filename);
       setDownloadSuccess(true);
       track("download_completed", {
         has_variants: previewMeta.hasDuplicateTitles,
         mapped_fields_count: Object.values(mapping).filter(Boolean).length,
+        partitioned: filename.endsWith(".zip"),
       });
     } catch {
       setError("Could not generate the CSV. Please try again.");
@@ -96,6 +148,7 @@ export default function App() {
   const resetToUpload = () => {
     setStep("upload");
     setPreview(null);
+    setDiagnostic(null);
     setUploadedFile(null);
     setMapping({});
     setError(null);
@@ -123,13 +176,23 @@ export default function App() {
           <span className="font-mono text-[11px] text-[#787774] uppercase tracking-widest">
             Shopify Import Fixer
           </span>
-          {step === "mapping" && (
-            <button
-              className="text-xs text-[#B2B0AA] hover:text-[#787774] transition-colors"
-              onClick={resetToUpload}
-            >
-              Start over
-            </button>
+          {step !== "upload" && (
+            <div className="flex items-center gap-4">
+              {step === "mapping" && (
+                <button
+                  className="text-xs text-[#B2B0AA] hover:text-[#787774] transition-colors"
+                  onClick={() => setStep("preflight")}
+                >
+                  ← Back to diagnostic
+                </button>
+              )}
+              <button
+                className="text-xs text-[#B2B0AA] hover:text-[#787774] transition-colors"
+                onClick={resetToUpload}
+              >
+                Start over
+              </button>
+            </div>
           )}
         </div>
       </header>
@@ -142,7 +205,7 @@ export default function App() {
           </div>
         )}
 
-        {/* Upload step */}
+        {/* Step: Upload */}
         {step === "upload" && (
           <section
             className="py-20 text-center"
@@ -162,9 +225,64 @@ export default function App() {
           </section>
         )}
 
-        {/* Mapping step */}
+        {/* Step: Pre-flight diagnostic */}
+        {step === "preflight" && diagnostic && (
+          <div className="py-10 space-y-5">
+            <FadeIn>
+              <div className="flex items-center justify-between mb-1">
+                <div>
+                  <h2 className="text-base font-medium text-[#111111]">
+                    {uploadedFile?.name ?? "Source file"}
+                  </h2>
+                  <p className="text-xs text-[#787774] mt-0.5">
+                    {diagnostic.summary.totalRows} rows scanned
+                  </p>
+                </div>
+                <button
+                  className="text-xs text-[#B2B0AA] hover:text-[#787774] transition-colors"
+                  onClick={resetToUpload}
+                >
+                  Change file
+                </button>
+              </div>
+            </FadeIn>
+            <FadeIn delay={60}>
+              <PreFlightReport
+                report={diagnostic}
+                repairOptions={repairOptions}
+                onRepairOptionsChange={setRepairOptions}
+                onContinue={() => setStep("mapping")}
+              />
+            </FadeIn>
+            <div className="h-16" />
+          </div>
+        )}
+
+        {/* Step: Mapping + repair */}
         {step === "mapping" && preview && (
           <div className="py-10 space-y-5">
+            {/* Diagnostic badge */}
+            {diagnostic && (diagnostic.summary.errorsCount > 0 || diagnostic.summary.warningsCount > 0) && (
+              <FadeIn>
+                <div className="flex items-center gap-3 px-4 py-2.5 border border-[#EAEAEA] rounded-lg bg-white">
+                  {diagnostic.summary.errorsCount > 0 ? (
+                    <>
+                      <span className="text-xs font-medium text-[#9F2F2D] bg-[#FDEBEC] px-2 py-0.5 rounded">
+                        {diagnostic.summary.errorsCount} {diagnostic.summary.errorsCount === 1 ? "error" : "errors"} queued for repair
+                      </span>
+                    </>
+                  ) : (
+                    <span className="text-xs font-medium text-[#956400] bg-[#FBF3DB] px-2 py-0.5 rounded">
+                      {diagnostic.summary.warningsCount} {diagnostic.summary.warningsCount === 1 ? "warning" : "warnings"} detected
+                    </span>
+                  )}
+                  <span className="text-xs text-[#787774]">
+                    Repairs will apply automatically when you download.
+                  </span>
+                </div>
+              </FadeIn>
+            )}
+
             {/* Source file */}
             <FadeIn>
               <div className="border border-[#EAEAEA] rounded-lg bg-white overflow-hidden">
@@ -237,7 +355,7 @@ export default function App() {
                   disabled={!isTitleMapped || loading}
                   onClick={handleGenerate}
                 >
-                  {loading ? "Generating…" : "Generate Shopify CSV"}
+                  {loading ? "Repairing…" : "Repair & Download"}
                 </button>
 
                 {!isTitleMapped && (
@@ -251,22 +369,26 @@ export default function App() {
                 {downloadSuccess && (
                   <div className="text-center space-y-2 pt-1">
                     <p className="text-sm font-medium text-[#346538]">
-                      shopify_ready.csv saved
+                      {downloadFilename} saved
                     </p>
-                    <div className="flex items-center justify-center gap-1.5 text-xs text-[#787774] flex-wrap">
-                      <span>In Shopify, go to</span>
-                      <span className="font-medium text-[#111111]">Products</span>
-                      <ArrowRightIcon size={10} className="text-[#B2B0AA]" />
-                      <span className="font-medium text-[#111111]">Import</span>
-                      <span>and upload this file</span>
-                    </div>
+                    {downloadFilename.endsWith(".zip") ? (
+                      <p className="text-xs text-[#787774]">
+                        Import each part separately — Products → Import in Shopify.
+                      </p>
+                    ) : (
+                      <div className="flex items-center justify-center gap-1.5 text-xs text-[#787774] flex-wrap">
+                        <span>In Shopify, go to</span>
+                        <span className="font-medium text-[#111111]">Products</span>
+                        <ArrowRightIcon size={10} className="text-[#B2B0AA]" />
+                        <span className="font-medium text-[#111111]">Import</span>
+                        <span>and upload this file</span>
+                      </div>
+                    )}
                   </div>
                 )}
-
               </div>
             </FadeIn>
 
-            {/* Bottom breathing room */}
             <div className="h-16" />
           </div>
         )}

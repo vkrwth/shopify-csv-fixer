@@ -1,0 +1,5 @@
+Product,SKU,Color,Size,UnitPrice,Stock,ImageURL
+Basic Tee,BT-BLK-S,Black,S,14.99,10,https://example.com/basic-tee-black.jpg
+Basic Tee,BT-BLK-M,Black,M,14.99,8,https://example.com/basic-tee-black.jpg
+Basic Tee,BT-WHT-S,White,S,14.99,6,https://example.com/basic-tee-white.jpg
+Basic Tee,BT-WHT-M,White,M,14.99,9,https://example.com/basic-tee-white.jpg

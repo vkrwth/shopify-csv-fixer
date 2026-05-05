@@ -40,54 +40,43 @@ export const FIELD_GROUPS: {
   advanced: ["Handle", "Published", "Option1 Name", "Option1 Value", "Option2 Name", "Option2 Value"],
 };
 
-// Normalized supplier column name → Shopify field (first match wins per field)
 const AUTO_MAP_SYNONYMS: Record<string, ShopifyField> = {
-  // Title
   productname: "Title",
   "product name": "Title",
   name: "Title",
   product: "Title",
   "item name": "Title",
-  // Body (HTML)
   description: "Body (HTML)",
   productdescription: "Body (HTML)",
   body: "Body (HTML)",
   "long description": "Body (HTML)",
-  // Vendor
   brand: "Vendor",
   vendor: "Vendor",
   manufacturer: "Vendor",
   supplier: "Vendor",
-  // Type
   category: "Type",
   "product type": "Type",
   type: "Type",
-  // Tags
   tags: "Tags",
   keywords: "Tags",
-  // Variant SKU
   sku: "Variant SKU",
   articlenumber: "Variant SKU",
   itemcode: "Variant SKU",
   productcode: "Variant SKU",
-  // Variant Price
   price: "Variant Price",
   retailprice: "Variant Price",
   saleprice: "Variant Price",
   unitprice: "Variant Price",
-  // Variant Inventory Qty
   stock: "Variant Inventory Qty",
   qty: "Variant Inventory Qty",
   quantity: "Variant Inventory Qty",
   available: "Variant Inventory Qty",
   inventory: "Variant Inventory Qty",
-  // Image Src
   imageurl: "Image Src",
   image: "Image Src",
   "image src": "Image Src",
   imagelink: "Image Src",
   photo: "Image Src",
-  // Options
   color: "Option1 Value",
   colour: "Option1 Value",
   size: "Option2 Value",
@@ -105,4 +94,88 @@ export function buildAutoMapping(columns: string[]): Mapping {
     }
   }
   return mapping;
+}
+
+// ---------------------------------------------------------------------------
+// Diagnostic types
+// ---------------------------------------------------------------------------
+
+export interface DiagnosticIssue {
+  code: string;
+  rows: number[] | "global";
+  msg: string;
+  data?: {
+    count?: number;
+    headers?: Array<{ source: string; suggested: string | null }>;
+    title?: string;
+    correct_handle?: string;
+    duplicate_titles?: string[];
+    handle?: string;
+    [key: string]: unknown;
+  };
+}
+
+export interface DiagnosticSummary {
+  totalRows: number;
+  productCount: number;
+  variantCount: number;
+  errorsCount: number;
+  warningsCount: number;
+}
+
+export interface DiffEntry {
+  row: number;
+  changeType: string;
+  field: string;
+  before: string;
+  after: string;
+  context: string;
+}
+
+export interface DiagnosticReport {
+  summary: DiagnosticSummary;
+  issues: DiagnosticIssue[];
+  nonStandardHeaders: Array<{ source: string; suggested: string | null }>;
+  handleFixes: Record<string, string>;
+  diffPreview: DiffEntry[];
+}
+
+export interface RepairOptions {
+  sanitizeEncoding: boolean;
+  syncHandles: boolean;
+  scrubPlaceholders: boolean;
+  partitionFile: boolean;
+}
+
+export function buildRepairDefaults(report: DiagnosticReport): RepairOptions {
+  const codes = new Set(report.issues.map((i) => i.code));
+  return {
+    sanitizeEncoding: codes.has("ERR_ILLEGAL_CHARACTERS") || codes.has("ERR_NON_UTF8"),
+    syncHandles: codes.has("ERR_INCONSISTENT_HANDLE"),
+    scrubPlaceholders: codes.has("ERR_DEFAULT_TITLE_CLASH"),
+    partitionFile: report.summary.totalRows > 5000,
+  };
+}
+
+// Merge diagnostic non-standard header suggestions into mapping
+export function applyDiagnosticSuggestions(
+  mapping: Mapping,
+  nonStandardHeaders: Array<{ source: string; suggested: string | null }>
+): Mapping {
+  const next = { ...mapping };
+  for (const { source, suggested } of nonStandardHeaders) {
+    if (suggested && SHOPIFY_FIELDS.includes(suggested as ShopifyField) && !next[suggested]) {
+      next[suggested] = source;
+    }
+  }
+  return next;
+}
+
+// PreviewMeta (for variant detection in the output preview)
+export interface PreviewMeta {
+  hasDuplicateTitles: boolean;
+  variantsWithSizeDetected: boolean;
+  variantsWithoutSize: boolean;
+  variantGroupsCount: number;
+  variantRowsCount: number;
 }

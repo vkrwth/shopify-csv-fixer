@@ -1,0 +1,5 @@
+product_name,sku,price,published,status,inventory
+Polo Shirt,POLO-NAV-S,"€24,95",yes,Active,10
+Polo Shirt,POLO-NAV-M,"€24,95",1,ACTIVE,11
+Polo Shirt,POLO-NAV-L,"€24,95",Yes,active,9
+Beanie Hat,BEANIE-BLK,"€9,95",no,Draft,20

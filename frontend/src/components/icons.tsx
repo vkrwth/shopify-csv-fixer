@@ -102,6 +102,44 @@ export function UploadIcon({ size = 32, className = "" }: IconProps) {
   );
 }
 
+export function ErrorIcon({ size = 14, className = "" }: IconProps) {
+  return (
+    <svg
+      width={size}
+      height={size}
+      viewBox="0 0 14 14"
+      fill="none"
+      className={className}
+      aria-hidden="true"
+    >
+      <circle cx="7" cy="7" r="5.5" stroke="currentColor" strokeWidth="1.25" />
+      <line x1="7" y1="4.5" x2="7" y2="7.5" stroke="currentColor" strokeWidth="1.25" strokeLinecap="round" />
+      <circle cx="7" cy="9.5" r="0.65" fill="currentColor" />
+    </svg>
+  );
+}
+
+export function ShieldCheckIcon({ size = 14, className = "" }: IconProps) {
+  return (
+    <svg
+      width={size}
+      height={size}
+      viewBox="0 0 14 14"
+      fill="none"
+      className={className}
+      aria-hidden="true"
+    >
+      <path
+        d="M7 1.5L2 3.5V7c0 2.5 2 4.5 5 5 3-0.5 5-2.5 5-5V3.5L7 1.5Z"
+        stroke="currentColor"
+        strokeWidth="1.15"
+        strokeLinejoin="round"
+      />
+      <path d="M4.5 7L6 8.5L9.5 5" stroke="currentColor" strokeWidth="1.15" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  );
+}
+
 export function ArrowRightIcon({ size = 12, className = "" }: IconProps) {
   return (
     <svg

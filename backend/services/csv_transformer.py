@@ -1,5 +1,6 @@
 import re
 import unicodedata
+import zipfile
 from collections import Counter
 from io import BytesIO
 
@@ -28,6 +29,11 @@ SIZE_TOKENS = {
     "36", "38", "40", "42", "44", "46",
 }
 
+SMART_QUOTE_RE = re.compile(r"[""''«»]")
+EMOJI_RE = re.compile(r"[\U00010000-\U0010FFFF]", flags=re.UNICODE)
+LINEBREAK_RE = re.compile(r"[\r\n]+")
+CONTROL_CHAR_RE = re.compile(r"[\x00-\x08\x0b\x0c\x0e-\x1f\x7f]")
+
 
 def slugify(text: str) -> str:
     s = unicodedata.normalize("NFKD", str(text))
@@ -52,10 +58,8 @@ def normalize_price(value: object) -> str:
         return ""
     s = str(value).strip()
     s = s.replace("€", "").replace("$", "").replace("£", "").strip()
-    # European format: thousands dot + comma decimal — e.g. 1.999,99
     if re.match(r"^\d{1,3}(\.\d{3})+,\d{2}$", s):
         s = s.replace(".", "").replace(",", ".")
-    # Simple comma-decimal: 19,99
     elif re.match(r"^\d+,\d{2}$", s):
         s = s.replace(",", ".")
     else:
@@ -90,6 +94,94 @@ def _read_csv(file_bytes: bytes) -> pd.DataFrame:
     return df
 
 
+# ---------------------------------------------------------------------------
+# Repair functions
+# ---------------------------------------------------------------------------
+
+def sanitize_encoding_df(df: pd.DataFrame) -> pd.DataFrame:
+    """Replace smart quotes, strip control chars and line breaks inside cells."""
+    def clean(val: str) -> str:
+        val = SMART_QUOTE_RE.sub('"', val)
+        val = LINEBREAK_RE.sub(" ", val)
+        val = CONTROL_CHAR_RE.sub("", val)
+        return val
+
+    for col in df.columns:
+        if df[col].dtype == object:
+            df[col] = df[col].apply(clean)
+
+    if "Handle" in df.columns:
+        df["Handle"] = df["Handle"].apply(lambda v: EMOJI_RE.sub("", v).strip("-"))
+
+    return df
+
+
+def sync_handles_df(df: pd.DataFrame) -> pd.DataFrame:
+    """Overwrite all handles in a Title group with the first row's handle."""
+    if "Title" not in df.columns or "Handle" not in df.columns:
+        return df
+
+    title_to_handle: dict[str, str] = {}
+    for _, row in df.iterrows():
+        t = row.get("Title", "")
+        h = row.get("Handle", "")
+        if t and h and t not in title_to_handle:
+            title_to_handle[t] = h
+
+    def fix(row: pd.Series) -> str:
+        t = row.get("Title", "")
+        return title_to_handle.get(t, row.get("Handle", ""))
+
+    df["Handle"] = df.apply(fix, axis=1)
+    return df
+
+
+def scrub_placeholders_df(df: pd.DataFrame) -> pd.DataFrame:
+    """Remove rows with 'Default Title' in multi-variant products."""
+    if "Handle" not in df.columns or "Option1 Value" not in df.columns:
+        return df
+
+    handle_counts = df["Handle"].value_counts()
+    multi = set(handle_counts[handle_counts > 1].index)
+
+    def is_placeholder(row: pd.Series) -> bool:
+        return (
+            row.get("Handle", "") in multi
+            and row.get("Option1 Value", "") == "Default Title"
+            and row.get("Option1 Name", "") in ("", "Title")
+        )
+
+    mask = df.apply(is_placeholder, axis=1)
+    return df[~mask].reset_index(drop=True)
+
+
+def _partition_by_product(df: pd.DataFrame, max_rows: int = 5000) -> list[pd.DataFrame]:
+    if len(df) <= max_rows or "Handle" not in df.columns:
+        return [df]
+
+    parts: list[pd.DataFrame] = []
+    current: list[pd.DataFrame] = []
+    current_count = 0
+
+    for _, group in df.groupby("Handle", sort=False):
+        gs = len(group)
+        if current_count + gs > max_rows and current:
+            parts.append(pd.concat(current, ignore_index=True))
+            current = []
+            current_count = 0
+        current.append(group)
+        current_count += gs
+
+    if current:
+        parts.append(pd.concat(current, ignore_index=True))
+
+    return parts or [df]
+
+
+# ---------------------------------------------------------------------------
+# Public API
+# ---------------------------------------------------------------------------
+
 def preview_csv(file_bytes: bytes) -> dict:
     df = _read_csv(file_bytes)
     return {
@@ -98,13 +190,33 @@ def preview_csv(file_bytes: bytes) -> dict:
     }
 
 
-def transform_csv(file_bytes: bytes, mapping: dict[str, str]) -> bytes:
+def transform_csv(
+    file_bytes: bytes,
+    mapping: dict[str, str],
+    repair_options: dict[str, bool] | None = None,
+) -> tuple[bytes, str]:
+    """
+    Returns (content_bytes, filename).
+    filename ends with .zip when the file is partitioned.
+    """
+    opts = repair_options or {}
     df = _read_csv(file_bytes)
+
+    # Drop completely empty rows
+    df = df.replace("", pd.NA).dropna(how="all").fillna("").reset_index(drop=True)
+
+    # Repair pass 1: encoding (operates on source df, before column selection)
+    if opts.get("sanitizeEncoding", False):
+        df = sanitize_encoding_df(df)
+
+    # Repair pass 2: sync inconsistent handles
+    if opts.get("syncHandles", False):
+        df = sync_handles_df(df)
 
     user_maps_opt1_name = bool(mapping.get("Option1 Name"))
     user_maps_opt1_value = bool(mapping.get("Option1 Value"))
 
-    # First pass: extract mapped fields for every row
+    # Build mapped rows
     raw_rows: list[dict[str, object]] = []
     for _, row in df.iterrows():
         out: dict[str, object] = {}
@@ -113,7 +225,7 @@ def transform_csv(file_bytes: bytes, mapping: dict[str, str]) -> bytes:
             out[field] = row[supplier_col] if supplier_col and supplier_col in df.columns else ""
         raw_rows.append(out)
 
-    # Identify titles that appear more than once — these are variant groups
+    # Identify variant groups (titles with >1 row)
     title_counts = Counter(str(r["Title"]) for r in raw_rows if r["Title"])
     duplicate_titles = {t for t, c in title_counts.items() if c > 1}
 
@@ -125,7 +237,6 @@ def transform_csv(file_bytes: bytes, mapping: dict[str, str]) -> bytes:
         if not out["Published"]:
             out["Published"] = "TRUE"
 
-        # Variant option logic
         is_variant = str(out["Title"]) in duplicate_titles
 
         if is_variant and not user_maps_opt1_name and not user_maps_opt1_value:
@@ -134,7 +245,6 @@ def transform_csv(file_bytes: bytes, mapping: dict[str, str]) -> bytes:
                 out["Option1 Name"] = "Size"
                 out["Option1 Value"] = size
 
-        # Fallback defaults (non-variant rows, or variants where size wasn't detected)
         if not out["Option1 Name"]:
             out["Option1 Name"] = "Title"
         if not out["Option1 Value"]:
@@ -146,6 +256,28 @@ def transform_csv(file_bytes: bytes, mapping: dict[str, str]) -> bytes:
         out_rows.append(out)
 
     out_df = pd.DataFrame(out_rows, columns=SHOPIFY_FIELDS)
-    buf = BytesIO()
-    out_df.to_csv(buf, index=False, encoding="utf-8")
-    return buf.getvalue()
+
+    # Repair pass 3: scrub Default Title placeholders (on mapped output)
+    if opts.get("scrubPlaceholders", False):
+        out_df = scrub_placeholders_df(out_df)
+
+    # Decide output format
+    total_rows = len(out_df)
+    file_bytes_estimate = total_rows * 200  # rough bytes per row
+
+    should_partition = opts.get("partitionFile", False) or total_rows > 5000 or file_bytes_estimate > 15_000_000
+
+    if should_partition:
+        parts = _partition_by_product(out_df)
+        if len(parts) > 1:
+            buf = BytesIO()
+            with zipfile.ZipFile(buf, "w", zipfile.ZIP_DEFLATED) as zf:
+                for i, part in enumerate(parts, 1):
+                    csv_buf = BytesIO()
+                    part.to_csv(csv_buf, index=False, encoding="utf-8-sig")
+                    zf.writestr(f"shopify_ready_part{i}.csv", csv_buf.getvalue())
+            return buf.getvalue(), "shopify_ready.zip"
+
+    csv_buf = BytesIO()
+    out_df.to_csv(csv_buf, index=False, encoding="utf-8-sig")
+    return csv_buf.getvalue(), "shopify_ready.csv"

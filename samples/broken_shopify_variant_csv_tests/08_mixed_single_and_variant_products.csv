@@ -1,0 +1,6 @@
+ProductName,SKU,Price,Stock,Description
+Gift Card,GFT-001,25.00,999,"Single product, no variant"
+Yoga Leggings,YOG-BLK-S,44.99,10,Black small
+Yoga Leggings,YOG-BLK-M,44.99,12,Black medium
+Yoga Leggings,YOG-BLK-L,44.99,5,Black large
+Water Bottle,BOT-001,12.99,100,"Single product, no variant"

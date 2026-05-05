@@ -120,8 +120,8 @@ check("no data: rows empty", len(result["rows"]), 0)
 print("\n=== transform_csv: price_formats.csv ===")
 data = (SAMPLES / "price_formats.csv").read_bytes()
 mapping = {"Title": "ProductName", "Variant SKU": "SKU", "Variant Price": "Price"}
-csv_out = transform_csv(data, mapping)
-reader = csv.DictReader(io.StringIO(csv_out.decode("utf-8")))
+csv_out, _ = transform_csv(data, mapping)
+reader = csv.DictReader(io.StringIO(csv_out.decode("utf-8-sig")))
 rows = list(reader)
 
 price_map = {r["Variant SKU"]: r["Variant Price"] for r in rows}
@@ -151,8 +151,8 @@ mapping = {
     "Title": "ProductName", "Variant SKU": "SKU",
     "Variant Price": "Price", "Variant Inventory Qty": "Stock",
 }
-csv_out = transform_csv(data, mapping)
-reader = csv.DictReader(io.StringIO(csv_out.decode("utf-8")))
+csv_out, _ = transform_csv(data, mapping)
+reader = csv.DictReader(io.StringIO(csv_out.decode("utf-8-sig")))
 rows = list(reader)
 
 qty_map = {r["Variant SKU"]: r["Variant Inventory Qty"] for r in rows}
@@ -172,8 +172,8 @@ check("qty: N/A",              qty_map.get("SKU-012"), "0")
 print("\n=== transform_csv: special_chars.csv ===")
 data = (SAMPLES / "special_chars.csv").read_bytes()
 mapping = {"Title": "ProductName", "Variant SKU": "SKU", "Variant Price": "Price"}
-csv_out = transform_csv(data, mapping)
-reader = csv.DictReader(io.StringIO(csv_out.decode("utf-8")))
+csv_out, _ = transform_csv(data, mapping)
+reader = csv.DictReader(io.StringIO(csv_out.decode("utf-8-sig")))
 rows = list(reader)
 
 handle_map = {r["Title"]: r["Handle"] for r in rows}
@@ -193,8 +193,8 @@ check("slugify: handle non-empty for all rows",
 print("\n=== transform_csv: multilingual.csv ===")
 data = (SAMPLES / "multilingual.csv").read_bytes()
 mapping = {"Title": "ProductName", "Variant SKU": "SKU", "Variant Price": "Price"}
-csv_out = transform_csv(data, mapping)
-reader = csv.DictReader(io.StringIO(csv_out.decode("utf-8")))
+csv_out, _ = transform_csv(data, mapping)
+reader = csv.DictReader(io.StringIO(csv_out.decode("utf-8-sig")))
 rows = list(reader)
 check("multilingual: 8 rows",   len(rows), 8)
 check("multilingual: titles preserved",
@@ -209,8 +209,8 @@ check("multilingual: handles generated",
 print("\n=== transform_csv: duplicate_titles.csv ===")
 data = (SAMPLES / "duplicate_titles.csv").read_bytes()
 mapping = {"Title": "ProductName", "Variant SKU": "SKU", "Variant Price": "Price"}
-csv_out = transform_csv(data, mapping)
-reader = csv.DictReader(io.StringIO(csv_out.decode("utf-8")))
+csv_out, _ = transform_csv(data, mapping)
+reader = csv.DictReader(io.StringIO(csv_out.decode("utf-8-sig")))
 rows = list(reader)
 blue_rows = [r for r in rows if r["Title"] == "Blue T-Shirt"]
 check("duplicate: 4 blue shirt rows", len(blue_rows), 4)
@@ -229,8 +229,8 @@ mapping = {
     "Title": "ProductName", "Variant SKU": "SKU",
     "Variant Price": "Price", "Variant Inventory Qty": "Stock",
 }
-csv_out = transform_csv(data, mapping)
-reader = csv.DictReader(io.StringIO(csv_out.decode("utf-8")))
+csv_out, _ = transform_csv(data, mapping)
+reader = csv.DictReader(io.StringIO(csv_out.decode("utf-8-sig")))
 rows = list(reader)
 check("semicolon: 6 rows", len(rows), 6)
 check("semicolon: price parsed",
@@ -250,8 +250,8 @@ mapping = {
     "Title": "ProductName", "Variant SKU": "SKU",
     "Variant Price": "Price", "Body (HTML)": "Description",
 }
-csv_out = transform_csv(data, mapping)
-reader = csv.DictReader(io.StringIO(csv_out.decode("utf-8")))
+csv_out, _ = transform_csv(data, mapping)
+reader = csv.DictReader(io.StringIO(csv_out.decode("utf-8-sig")))
 rows = list(reader)
 check("empty vals: rows loaded",    len(rows) >= 4, True)
 check("empty vals: Published set",  all(r["Published"] == "TRUE" for r in rows), True)
@@ -266,8 +266,8 @@ print("\n=== transform_csv: whitespace_padding.csv ===")
 data = (SAMPLES / "whitespace_padding.csv").read_bytes()
 # Stripped column name should be used in mapping
 mapping = {"Title": "ProductName", "Variant SKU": "SKU", "Variant Price": "Price"}
-csv_out = transform_csv(data, mapping)
-reader = csv.DictReader(io.StringIO(csv_out.decode("utf-8")))
+csv_out, _ = transform_csv(data, mapping)
+reader = csv.DictReader(io.StringIO(csv_out.decode("utf-8-sig")))
 rows = list(reader)
 check("whitespace: 3 rows", len(rows), 3)
 check("whitespace: title mapped", rows[0]["Title"], "Blue T-Shirt")
@@ -280,8 +280,8 @@ check("whitespace: handle generated", rows[0]["Handle"], "blue-t-shirt")
 print("\n=== transform_csv: long_values.csv ===")
 data = (SAMPLES / "long_values.csv").read_bytes()
 mapping = {"Title": "ProductName", "Variant SKU": "SKU", "Variant Price": "Price"}
-csv_out = transform_csv(data, mapping)
-reader = csv.DictReader(io.StringIO(csv_out.decode("utf-8")))
+csv_out, _ = transform_csv(data, mapping)
+reader = csv.DictReader(io.StringIO(csv_out.decode("utf-8-sig")))
 rows = list(reader)
 long_row = next((r for r in rows if r["Variant SKU"] == "SKU-002"), None)
 check("long vals: row present",        long_row is not None, True)
@@ -321,8 +321,8 @@ mapping = {
     "Variant Price": "Price",
     "Body (HTML)": "Description",
 }
-csv_out = transform_csv(data, mapping)
-reader = csv.DictReader(io.StringIO(csv_out.decode("utf-8")))
+csv_out, _ = transform_csv(data, mapping)
+reader = csv.DictReader(io.StringIO(csv_out.decode("utf-8-sig")))
 rows = list(reader)
 
 check("variants: 6 rows total", len(rows), 6)
@@ -363,8 +363,8 @@ check("variants: price normalized", blue_rows[0]["Variant Price"], "19.99")
 # ---------------------------------------------------------------------------
 print("\n=== transform_csv: non-variant uses Default Title ===")
 unique_csv = b"ProductName,SKU,Price\nUnique Product,UNQ-001,9.99\n"
-csv_out = transform_csv(unique_csv, {"Title": "ProductName", "Variant SKU": "SKU", "Variant Price": "Price"})
-reader = csv.DictReader(io.StringIO(csv_out.decode("utf-8")))
+csv_out, _ = transform_csv(unique_csv, {"Title": "ProductName", "Variant SKU": "SKU", "Variant Price": "Price"})
+reader = csv.DictReader(io.StringIO(csv_out.decode("utf-8-sig")))
 rows = list(reader)
 check("non-variant: Option1 Name = Title",         rows[0]["Option1 Name"],  "Title")
 check("non-variant: Option1 Value = Default Title", rows[0]["Option1 Value"], "Default Title")
@@ -382,8 +382,8 @@ mapping_with_manual_opt1 = {
     "Option1 Name": "SKU",   # user manually mapped both Option1 fields
     "Option1 Value": "SKU",
 }
-csv_out = transform_csv(data, mapping_with_manual_opt1)
-reader = csv.DictReader(io.StringIO(csv_out.decode("utf-8")))
+csv_out, _ = transform_csv(data, mapping_with_manual_opt1)
+reader = csv.DictReader(io.StringIO(csv_out.decode("utf-8-sig")))
 rows = list(reader)
 # Auto-detection should NOT have run; Option1 Name should be the mapped SKU value
 check("manual override: Option1 Name != Size",
