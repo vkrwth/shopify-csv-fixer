@@ -29,7 +29,7 @@ SIZE_TOKENS = {
     "36", "38", "40", "42", "44", "46",
 }
 
-SMART_QUOTE_RE = re.compile(r"[""''«»]")
+SMART_QUOTE_RE = re.compile("[\u201C\u201D\u2018\u2019\u00AB\u00BB]")
 EMOJI_RE = re.compile(r"[\U00010000-\U0010FFFF]", flags=re.UNICODE)
 LINEBREAK_RE = re.compile(r"[\r\n]+")
 CONTROL_CHAR_RE = re.compile(r"[\x00-\x08\x0b\x0c\x0e-\x1f\x7f]")

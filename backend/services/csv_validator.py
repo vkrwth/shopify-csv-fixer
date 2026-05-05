@@ -57,25 +57,25 @@ NON_STANDARD_SUGGESTIONS: dict[str, str] = {
     "url_key": "Handle",
 }
 
-SMART_QUOTE_RE = re.compile(r”[“”’’«»]”)
-EMOJI_RE = re.compile(r”[\U00010000-\U0010FFFF]”, flags=re.UNICODE)
-CONTROL_CHAR_RE = re.compile(r”[\x00-\x08\x0b\x0c\x0e-\x1f\x7f]”)
+SMART_QUOTE_RE = re.compile("[\u201C\u201D\u2018\u2019\u00AB\u00BB]")
+EMOJI_RE = re.compile(r"[\U00010000-\U0010FFFF]", flags=re.UNICODE)
+CONTROL_CHAR_RE = re.compile(r"[\x00-\x08\x0b\x0c\x0e-\x1f\x7f]")
 
 COLOR_TOKENS: dict[str, str] = {
-    “RED”: “Red”, “BLUE”: “Blue”, “GREEN”: “Green”, “BLACK”: “Black”,
-    “WHITE”: “White”, “YELLOW”: “Yellow”, “PINK”: “Pink”, “PURPLE”: “Purple”,
-    “ORANGE”: “Orange”, “BROWN”: “Brown”, “GREY”: “Grey”, “GRAY”: “Gray”,
-    “NAVY”: “Navy”, “BEIGE”: “Beige”, “TAN”: “Tan”, “TEAL”: “Teal”,
-    “MAROON”: “Maroon”, “OLIVE”: “Olive”, “CORAL”: “Coral”, “CREAM”: “Cream”,
-    “SILVER”: “Silver”, “GOLD”: “Gold”,
+    "RED": "Red", "BLUE": "Blue", "GREEN": "Green", "BLACK": "Black",
+    "WHITE": "White", "YELLOW": "Yellow", "PINK": "Pink", "PURPLE": "Purple",
+    "ORANGE": "Orange", "BROWN": "Brown", "GREY": "Grey", "GRAY": "Gray",
+    "NAVY": "Navy", "BEIGE": "Beige", "TAN": "Tan", "TEAL": "Teal",
+    "MAROON": "Maroon", "OLIVE": "Olive", "CORAL": "Coral", "CREAM": "Cream",
+    "SILVER": "Silver", "GOLD": "Gold",
 }
-SIZE_SET = {“XS”, “S”, “M”, “L”, “XL”, “XXL”, “2XL”, “3XL”, “4XL”, “36”, “38”, “40”, “42”, “44”, “46”}
+SIZE_SET = {"XS", "S", "M", "L", "XL", "XXL", "2XL", "3XL", "4XL", "36", "38", "40", "42", "44", "46"}
 
 
 def _extract_color_size_from_sku(sku: str) -> tuple[str | None, str | None]:
     if not sku:
         return None, None
-    parts = [p.upper() for p in re.split(r”[-_/ ]”, sku.strip()) if p]
+    parts = [p.upper() for p in re.split(r"[-_/ ]", sku.strip()) if p]
     color = next((COLOR_TOKENS[p] for p in parts if p in COLOR_TOKENS), None)
     size = next((p for p in parts if p in SIZE_SET), None)
     return color, size
@@ -103,7 +103,7 @@ def validate_csv(file_bytes: bytes) -> dict:
         issues.append({
             "code": "ERR_ILLEGAL_CHARACTERS",
             "rows": "global",
-            "msg": f"Found {smart_count} curly/smart quote character(s) (“”). These break field values in Shopify.",
+            "msg": f"Found {smart_count} curly/smart quote characters. These break field values in Shopify.",
             "data": {"count": smart_count},
         })
 
